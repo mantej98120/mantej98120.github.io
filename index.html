@@ -35,6 +35,34 @@
             100% { background-position: 0% 50%; }
         }
 
+        /* Update Badge Styles at the top */
+        .status-badge {
+            position: absolute;
+            top: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            letter-spacing: 0.02em;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #eab308; /* Default yellow pending status */
+            box-shadow: 0 0 8px #eab308;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
         /* Centered Layout Wrapper */
         .counter-container {
             text-align: center;
@@ -100,52 +128,84 @@
 </head>
 <body>
 
+    <!-- Top Status Indicator showing proof of update -->
+    <div class="status-badge">
+        <div class="status-dot" id="network-dot"></div>
+        <span>v1.2 Latest Update: 29 Oct 2026</span>
+    </div>
+
     <div class="counter-container">
         <!-- Big Button in the Middle -->
         <button class="giant-click-btn" id="click-trigger">CLICK! 🖱️</button>
 
         <!-- Count Display Tally at the Bottom -->
         <div class="global-tracker">
-            <span id="clicks-display">Loading...</span> #clicks
+            <span id="clicks-display">0</span> #clicks
         </div>
     </div>
 
-    <!-- Live API Backend Integration -->
+    <!-- Fail-safe Hybrid JavaScript Layer -->
     <script>
-        // Pre-configured with your GitHub username to ensure uniqueness
-        const UNIQUE_NAMESPACE = "mantej98120_global_click_counter_2026"; 
-        
-        const countUrl = `https://mileshilliard.com{UNIQUE_NAMESPACE}`;
-        const viewUrl = `https://mileshilliard.com{UNIQUE_NAMESPACE}?amount=0`;
+        const username = "mantej98120";
+        const countUrl = `https://counterapi.dev{username}/clicks/up`;
+        const viewUrl = `https://counterapi.dev{username}/clicks`;
         
         const clickButton = document.getElementById('click-trigger');
         const clicksDisplay = document.getElementById('clicks-display');
+        const networkDot = document.getElementById('network-dot');
 
-        async function fetchTotalClicks() {
+        let localBackupCount = parseInt(localStorage.getItem('mantej_clicks')) || 0;
+        let basicMode = false;
+
+        function setStatus(mode) {
+            if (mode === 'live') {
+                networkDot.style.backgroundColor = '#10b981'; // Green
+                networkDot.style.boxShadow = '0 0 8px #10b981';
+            } else {
+                networkDot.style.backgroundColor = '#eab308'; // Yellow
+                networkDot.style.boxShadow = '0 0 8px #eab308';
+            }
+        }
+
+        async function loadClicks() {
             try {
                 const response = await fetch(viewUrl);
+                if (!response.ok) throw new Error("Server issue");
                 const data = await response.json();
-                clicksDisplay.textContent = data.value || 0;
+                clicksDisplay.textContent = data.count || 0;
+                setStatus('live');
             } catch (error) {
-                console.error("Error loading counters:", error);
-                clicksDisplay.textContent = "Error";
+                console.log("Using Local Storage Mode.");
+                basicMode = true;
+                clicksDisplay.textContent = localBackupCount;
+                setStatus('local');
             }
         }
 
         clickButton.addEventListener('click', async () => {
-            clicksDisplay.textContent = "Updating...";
-            try {
-                const response = await fetch(countUrl);
-                const data = await response.json();
-                clicksDisplay.textContent = data.value;
-            } catch (error) {
-                console.error("Error saving click:", error);
-                fetchTotalClicks();
+            if (basicMode) {
+                localBackupCount++;
+                localStorage.setItem('mantej_clicks', localBackupCount);
+                clicksDisplay.textContent = localBackupCount;
+            } else {
+                clicksDisplay.textContent = "...";
+                try {
+                    const response = await fetch(countUrl);
+                    if (!response.ok) throw new Error("Update failed");
+                    const data = await response.json();
+                    clicksDisplay.textContent = data.count;
+                    setStatus('live');
+                } catch (error) {
+                    basicMode = true;
+                    localBackupCount++;
+                    localStorage.setItem('mantej_clicks', localBackupCount);
+                    clicksDisplay.textContent = localBackupCount;
+                    setStatus('local');
+                }
             }
         });
 
-        // Load the tally immediately when the webpage opens
-        fetchTotalClicks();
+        loadClicks();
     </script>
 </body>
 </html>
