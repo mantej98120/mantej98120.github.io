@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Portfolio | Live on GitHub Pages</title>
+    <title>Global Click Counter</title>
     <style>
-        /* CSS Reset & Variable Styling */
+        /* Reset and Full Screen Centering */
         * {
             margin: 0;
             padding: 0;
@@ -13,213 +13,139 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #38bdf8;
-            --accent-hover: #7dd3fc;
-        }
-
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            line-height: 1.6;
-            padding: 2rem 1rem;
-        }
-
-        /* Container Layout */
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        /* Header / Profile Section */
-        header {
-            text-align: center;
-            margin-bottom: 3rem;
-            padding-bottom: 2rem;
-            border-bottom: 1px solid var(--card-bg);
-        }
-
-        .avatar {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background: linear-gradient(45deg, var(--accent), #818cf8);
-            margin: 0 auto 1rem;
+            /* Smooth, modern dark gradient background */
+            background: linear-gradient(135deg, #0f172a, #1e1b4b, #311042);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            height: 100vh;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: center;
-            font-size: 2.5rem;
+            align-items: center;
+            overflow: hidden;
+            color: #ffffff;
+            padding: 1rem;
         }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.05em;
+        /* Animated Background Gradient Movement */
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
-        header p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
-
-        /* Main Content & Cards */
-        h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-            color: var(--accent);
-        }
-
-        .section {
-            margin-bottom: 3rem;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
-
-        @media (min-width: 600px) {
-            .grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            border: 1px solid #334155;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent);
-        }
-
-        .card h3 {
-            margin-bottom: 0.5rem;
-        }
-
-        .card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            margin-bottom: 1rem;
-        }
-
-        /* Call to Action Button */
-        .btn {
-            display: inline-block;
-            background-color: var(--accent);
-            color: var(--bg-color);
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: background-color 0.2s;
-        }
-
-        .btn:hover {
-            background-color: var(--accent-hover);
-        }
-
-        /* Footer & Interactive Counter */
-        footer {
+        /* Centered Layout Wrapper */
+        .counter-container {
             text-align: center;
-            margin-top: 5rem;
-            padding-top: 2rem;
-            border-top: 1px solid var(--card-bg);
-            color: var(--text-muted);
-            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 3.5rem;
         }
 
-        .counter-box {
-            margin-top: 1rem;
-            background: #1e293b;
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            border-radius: 2rem;
-        }
-
-        #like-btn {
-            background: none;
+        /* Giant Clicker Button */
+        .giant-click-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #ffffff;
             border: none;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            font-weight: 800;
             cursor: pointer;
-            font-size: 1rem;
-            margin-left: 0.5rem;
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4), 
+                        0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s, box-shadow 0.2s, background 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .giant-click-btn:hover {
+            background: linear-gradient(135deg, #34d399, #10b981);
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.6), 
+                        0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .giant-click-btn:active {
+            transform: scale(0.92) translateY(2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);
+        }
+
+        /* Running Tally Count at Bottom */
+        .global-tracker {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        #clicks-display {
+            color: #38bdf8; /* Vibrant cyan for the number */
+            font-variant-numeric: tabular-nums;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <!-- Profile Header -->
-        <header>
-            <div class="avatar">🚀</div>
-            <h1>Welcome to My Website</h1>
-            <p>Built from scratch and hosted completely free on GitHub Pages.</p>
-        </header>
+    <div class="counter-container">
+        <!-- Big Button in the Middle -->
+        <button class="giant-click-btn" id="click-trigger">CLICK! 🖱️</button>
 
-        <!-- About Me Section -->
-        <div class="section">
-            <h2>About Me</h2>
-            <p style="color: var(--text-muted);">
-                Hi there! I am a creator exploring web development. This site acts as my digital home base where I plan to show off future coding milestones, projects, and personal designs. Stay tuned as I continue to build out features!
-            </p>
+        <!-- Count Display Tally at the Bottom -->
+        <div class="global-tracker">
+            <span id="clicks-display">Loading...</span> #clicks
         </div>
-
-        <!-- Projects Grid -->
-        <div class="section">
-            <h2>My Projects</h2>
-            <div class="grid">
-                <!-- Project 1 -->
-                <div class="card">
-                    <h3>Project One</h3>
-                    <p>A brief summary of what this project does and the technology used to create it.</p>
-                    <a href="#" class="btn">View Project</a>
-                </div>
-                <!-- Project 2 -->
-                <div class="card">
-                    <h3>Project Two</h3>
-                    <p>Another template block ready for your future coding updates or design portfolios.</p>
-                    <a href="#" class="btn">Learn More</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer with JavaScript Interaction -->
-        <footer>
-            <p>&copy; 2026 My GitHub Space. All rights reserved.</p>
-            <div class="counter-box">
-                <span>Enjoying this template?</span>
-                <button id="like-btn">❤️ <span id="like-count">0</span></button>
-            </div>
-        </footer>
     </div>
 
-    <!-- Interactive JavaScript Layer -->
+    <!-- Live API Backend Integration -->
     <script>
-        // Simple local counter script to demonstrate active JavaScript execution
-        const likeBtn = document.getElementById('like-btn');
-        const likeCount = document.getElementById('like-count');
-        let count = 0;
+        // Pre-configured with your GitHub username to ensure uniqueness
+        const UNIQUE_NAMESPACE = "mantej98120_global_click_counter_2026"; 
+        
+        const countUrl = `https://mileshilliard.com{UNIQUE_NAMESPACE}`;
+        const viewUrl = `https://mileshilliard.com{UNIQUE_NAMESPACE}?amount=0`;
+        
+        const clickButton = document.getElementById('click-trigger');
+        const clicksDisplay = document.getElementById('clicks-display');
 
-        likeBtn.addEventListener('click', () => {
-            count++;
-            likeCount.textContent = count;
-            
-            // Add a little bounce animation style temporarily
-            likeBtn.style.transform = 'scale(1.2)';
-            setTimeout(() => {
-                likeBtn.style.transform = 'scale(1)';
-            }, 100);
+        async function fetchTotalClicks() {
+            try {
+                const response = await fetch(viewUrl);
+                const data = await response.json();
+                clicksDisplay.textContent = data.value || 0;
+            } catch (error) {
+                console.error("Error loading counters:", error);
+                clicksDisplay.textContent = "Error";
+            }
+        }
+
+        clickButton.addEventListener('click', async () => {
+            clicksDisplay.textContent = "Updating...";
+            try {
+                const response = await fetch(countUrl);
+                const data = await response.json();
+                clicksDisplay.textContent = data.value;
+            } catch (error) {
+                console.error("Error saving click:", error);
+                fetchTotalClicks();
+            }
         });
+
+        // Load the tally immediately when the webpage opens
+        fetchTotalClicks();
     </script>
 </body>
 </html>
