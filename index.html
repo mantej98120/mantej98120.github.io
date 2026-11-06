@@ -1,247 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Click Counter</title>
-    <style>
-        /* Reset and Full Screen Centering */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
-        body {
-            /* Smooth, modern dark gradient background */
-            background: linear-gradient(135deg, #0f172a, #1e1b4b, #311042);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            color: #ffffff;
-            padding: 1rem;
-        }
-
-        /* Animated Background Gradient Movement */
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Update Badge Styles at the top */
-        .status-badge {
-            position: absolute;
-            top: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: #94a3b8;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            letter-spacing: 0.02em;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #eab308; /* Default yellow pending status */
-            box-shadow: 0 0 8px #eab308;
-            transition: background-color 0.3s, box-shadow 0.3s;
-        }
-
-        /* Centered Layout Wrapper */
-        .counter-container {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            gap: 3.5rem;
-        }
-
-        /* Giant Clicker Button */
-        .giant-click-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: #ffffff;
-            border: none;
-            width: 220px;
-            height: 220px;
-            border-radius: 50%;
-            font-size: 1.8rem;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4), 
-                        0 5px 15px rgba(0, 0, 0, 0.2);
-            transition: all 0.2s ease;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            padding: 1.5rem;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .giant-click-btn:hover:not(:disabled) {
-            background: linear-gradient(135deg, #34d399, #10b981);
-            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.6), 
-                        0 5px 15px rgba(0, 0, 0, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .giant-click-btn:active:not(:disabled) {
-            transform: scale(0.92) translateY(2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.2);
-        }
-
-        /* Locked State Visual Style */
-        .giant-click-btn:disabled {
-            background: linear-gradient(135deg, #64748b, #475569);
-            color: #cbd5e1;
-            font-size: 1.2rem;
-            font-weight: 600;
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-
-        /* Running Tally Count at Bottom */
-        .global-tracker {
-            font-size: 1.6rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            background: rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 0.8rem 2rem;
-            border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        }
-
-        #clicks-display {
-            color: #38bdf8; /* Vibrant cyan for the number */
-            font-variant-numeric: tabular-nums;
-        }
-    </style>
+  <style>
+    body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #faf8ef; }
+    #grid { display: grid; grid-template-columns: repeat(4, 80px); grid-gap: 10px; background: #bbada0; padding: 10px; border-radius: 6px; }
+    .cell { width: 80px; height: 80px; background: rgba(238, 228, 218, 0.35); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: #776e65; }
+  </style>
 </head>
 <body>
+  <h1>2048 (WASD)</h1>
+  <div id="grid"></div>
+  <script>
+    const gridEl = document.getElementById('grid');
+    let board = [
+      [0,0,0,0],
+      [0,2,0,0],
+      [0,0,0,0],
+      [0,0,0,2]
+    ];
 
-    <!-- Top Status Indicator bumped to Version 1.4 -->
-    <div class="status-badge">
-        <div class="status-dot" id="network-dot"></div>
-        <span>v1.4 Latest Update</span>
-    </div>
+    function draw() {
+      gridEl.innerHTML = '';
+      board.flat().forEach(val => {
+        const div = document.createElement('div');
+        div.className = 'cell';
+        div.style.background = val ? '#eee4da' : '';
+        div.textContent = val === 0 ? '' : val;
+        gridEl.appendChild(div);
+      });
+    }
 
-    <div class="counter-container">
-        <!-- Big Button in the Middle -->
-        <button class="giant-click-btn" id="click-trigger">CLICK! 🖱️</button>
+    window.addEventListener('keydown', e => {
+      switch(e.key.toLowerCase()) {
+        case 'w': console.log('Up'); break;
+        case 'a': console.log('Left'); break;
+        case 's': console.log('Down'); break;
+        case 'd': console.log('Right'); break;
+      }
+      draw();
+    });
 
-        <!-- Count Display Tally at the Bottom -->
-        <div class="global-tracker">
-            <span id="clicks-display">0</span> #clicks
-        </div>
-    </div>
-
-    <!-- Fail-safe Hybrid JavaScript Layer -->
-    <script>
-        const username = "mantej98120";
-        const countUrl = `https://counterapi.dev{username}/clicks/up`;
-        const viewUrl = `https://counterapi.dev{username}/clicks`;
-        
-        const clickButton = document.getElementById('click-trigger');
-        const clicksDisplay = document.getElementById('clicks-display');
-        const networkDot = document.getElementById('network-dot');
-
-        let localBackupCount = parseInt(localStorage.getItem('mantej_clicks')) || 0;
-        let basicMode = false;
-
-        // Check if this specific visitor has already clicked before on this device
-        const hasClickedBefore = localStorage.getItem('mantej_has_voted') === 'true';
-
-        function setStatus(mode) {
-            if (mode === 'live') {
-                networkDot.style.backgroundColor = '#10b981'; // Green
-                networkDot.style.boxShadow = '0 0 8px #10b981';
-            } else {
-                networkDot.style.backgroundColor = '#eab308'; // Yellow
-                networkDot.style.boxShadow = '0 0 8px #eab308';
-            }
-        }
-
-        // Lock button function
-        function lockButton() {
-            clickButton.disabled = true;
-            clickButton.textContent = "Footprint Left!🔒";
-        }
-
-        async function loadClicks() {
-            // Apply lock if they have already voted in a past session
-            if (hasClickedBefore) {
-                lockButton();
-            }
-
-            try {
-                const response = await fetch(viewUrl);
-                if (!response.ok) throw new Error("Server issue");
-                const data = await response.json();
-                
-                clicksDisplay.textContent = data.count || 0;
-                setStatus('live');
-            } catch (error) {
-                console.log("Using Local Storage Mode.");
-                basicMode = true;
-                
-                clicksDisplay.textContent = localBackupCount;
-                setStatus('local');
-            }
-        }
-
-        clickButton.addEventListener('click', async () => {
-            // Stop function immediately if already clicked
-            if (localStorage.getItem('mantej_has_voted') === 'true') return;
-
-            // Mark device as voted to block infinite spamming
-            localStorage.setItem('mantej_has_voted', 'true');
-            lockButton();
-
-            if (basicMode) {
-                localBackupCount++;
-                localStorage.setItem('mantej_clicks', localBackupCount);
-                clicksDisplay.textContent = localBackupCount;
-            } else {
-                clicksDisplay.textContent = "...";
-                try {
-                    const response = await fetch(countUrl);
-                    if (!response.ok) throw new Error("Update failed");
-                    const data = await response.json();
-                    clicksDisplay.textContent = data.count;
-                    setStatus('live');
-                } catch (error) {
-                    basicMode = true;
-                    localBackupCount++;
-                    localStorage.setItem('mantej_clicks', localBackupCount);
-                    clicksDisplay.textContent = localBackupCount;
-                    setStatus('local');
-                }
-            }
-        });
-
-        loadClicks();
-    </script>
+    draw();
+  </script>
 </body>
 </html>
