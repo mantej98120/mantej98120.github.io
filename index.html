@@ -1,650 +1,571 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Turball 3D - Rocket Car Soccer</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-    body { overflow: hidden; background: #0b101b; font-family: 'Segoe UI', system-ui, sans-serif; color: #fff; }
-    #hud {
-      position: fixed; inset: 0; pointer-events: none;
-      display: flex; flex-direction: column; justify-content: space-between; padding: 20px;
-    }
-    .top-bar { display: flex; justify-content: center; align-items: center; gap: 24px; }
-    .score-box {
-      background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.15);
-      padding: 10px 28px; border-radius: 12px; display: flex; align-items: center; gap: 20px;
-      backdrop-filter: blur(8px); box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    }
-    .team-blue { color: #38bdf8; font-weight: 800; font-size: 28px; }
-    .team-orange { color: #fb923c; font-weight: 800; font-size: 28px; }
-    .divider { color: #64748b; font-weight: 700; font-size: 20px; }
-    .cam-badge {
-      position: fixed; top: 24px; left: 24px;
-      background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.4);
-      padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;
-      color: #38bdf8;
-    }
-    .controls-hint {
-      position: fixed; top: 24px; right: 24px;
-      background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.1);
-      padding: 12px 16px; border-radius: 10px; font-size: 12px; line-height: 1.6; color: #cbd5e1;
-    }
-    .controls-hint b { color: #fff; }
-    .bottom-bar { display: flex; justify-content: flex-end; align-items: flex-end; }
-    .boost-meter {
-      width: 150px; height: 150px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(15,23,42,0.9) 55%, rgba(30,41,59,0.95) 100%);
-      border: 4px solid #f59e0b; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      box-shadow: 0 0 25px rgba(245, 158, 11, 0.35);
-    }
-    .boost-val { font-size: 38px; font-weight: 900; color: #fbbf24; line-height: 1; }
-    .boost-label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: #94a3b8; margin-top: 4px; }
-    #banner {
-      position: fixed; top: 38%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
-      font-size: 64px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;
-      text-shadow: 0 10px 30px rgba(0,0,0,0.7); opacity: 0; transition: all 0.25s ease;
-      pointer-events: none;
-    }
-    #banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  </style>
-</head>
-<body>
-  <div id="hud">
-    <div class="cam-badge" id="camStatus">BALL CAM: ON (F)</div>
-    <div class="top-bar">
-      <div class="score-box">
-        <span class="team-blue" id="blueScore">0</span>
-        <span class="divider">VS</span>
-        <span class="team-orange" id="orangeScore">0</span>
-      </div>
-    </div>
-    <div class="controls-hint">
-      <b>W/S or ↑/↓</b> Drive / Air Pitch<br>
-      <b>A/D or ←/→</b> Steer / Air Yaw<br>
-      <b>SPACE</b> Jump & Double-Jump Flip<br>
-      <b>SHIFT</b> Rocket Boost<br>
-      <b>E / C</b> Powerslide Drift<br>
-      <b>F / TAB</b> Toggle Ball Cam<br>
-      <b>R</b> Reset Kickoff
-    </div>
-    <div id="banner">GOAL!</div>
-    <div class="bottom-bar">
-      <div class="boost-meter" id="boostRing">
-        <div class="boost-val" id="boostVal">100</div>
-        <div class="boost-label">BOOST</div>
-      </div>
-    </div>
-  </div>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Turbo Ball 3D</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06101c;color:white;font-family:system-ui,Segoe UI,Arial}canvas{display:block}
+#hud{position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:18px;background:#061323d9;border:1px solid #ffffff2a;border-radius:15px;padding:8px 18px;box-shadow:0 8px 30px #0008}.score{font-size:29px;font-weight:950}.blue{color:#43dcff}.red{color:#ff5b83}#clock{font-size:21px;font-weight:850;min-width:55px;text-align:center}.boost{position:absolute;left:18px;bottom:18px;background:#061323dc;border:1px solid #ffffff30;padding:10px 13px;border-radius:12px;width:190px;font-weight:800;font-size:12px}.bar{height:10px;background:#ffffff22;border-radius:9px;margin-top:7px;overflow:hidden}.fill{height:100%;width:100%;background:linear-gradient(90deg,#24baff,#9af7ff);transition:width .1s}.boost.low .fill{animation:pulse .4s infinite alternate}.boost.low{border-color:#ff5b83}.mode-tag{position:absolute;left:18px;bottom:130px;font-size:11px;font-weight:900;color:#9af7ff;background:#061323aa;padding:4px 10px;border-radius:6px;border:1px solid #9af7ff44}
+@keyframes pulse{from{opacity:1}to{opacity:.4}}
+#goalMsg{position:fixed;inset:0;z-index:6;display:grid;place-items:center;pointer-events:none;opacity:0;transition:opacity .3s}.goal-text{font-size:clamp(42px,9vw,80px);font-weight:1000;text-shadow:0 0 40px currentColor;letter-spacing:-2px}.goal-sub{font-size:clamp(18px,3vw,28px);font-weight:800;color:#d9eaf5;margin-top:8px}
+#overlay{position:fixed;inset:0;z-index:5;display:grid;place-items:center;background:radial-gradient(ellipse,#123b58dd,#020812f2)}.panel{width:min(520px,calc(100vw - 30px));padding:30px;text-align:center;border:1px solid #75ddff66;border-radius:24px;background:linear-gradient(145deg,#102c45f5,#071523f5);box-shadow:0 20px 80px #000b}.logo{font-size:clamp(38px,8vw,62px);font-weight:1000;letter-spacing:-3px;text-shadow:0 0 25px #29caff88}.logo span{color:#43dcff}.sub{color:#bdd5e5;margin:10px 0 22px}.btn{border:0;border-radius:12px;padding:14px 30px;font-size:17px;font-weight:950;color:#031321;background:linear-gradient(90deg,#45dcff,#a5f4ff);cursor:pointer;margin:6px}.btn.alt{background:linear-gradient(90deg,#ff5b83,#ffb0c4);color:#2a0510}.mode-select{display:flex;gap:10px;justify-content:center;margin:14px 0}.mode-btn{padding:10px 22px;border-radius:10px;border:2px solid #ffffff33;background:#0a1e30;color:#9db7c9;font-weight:900;font-size:14px;cursor:pointer}.mode-btn.active{border-color:#43dcff;color:#43dcff;background:#43dcff15}.small{font-size:12px;color:#9db7c9;line-height:1.6;margin-top:17px}.mobile{display:none;position:fixed;bottom:15px;right:12px;z-index:3;gap:6px;width:180px;flex-wrap:wrap;justify-content:flex-end}.mobile button{background:#061323bb;color:white;border:1px solid #ffffff66;border-radius:10px;padding:13px;min-width:48px;font-weight:900;touch-action:none}
+@media(max-width:700px){.help{display:none}.mobile{display:flex}.boost{width:140px;bottom:12px;left:10px}.top{top:8px;padding:6px 12px;gap:12px}.score{font-size:23px}}
+</style></head><body>
+<div id="hud"><div class="top"><div id="bs" class="score blue">0</div><div id="clock">3:00</div><div id="rs" class="score red">0</div></div><div class="boost" id="boostBox"><div style="display:flex;justify-content:space-between"><span>BOOST</span><span id="bn">100%</span></div><div class="bar"><div id="bf" class="fill"></div></div></div><div class="mode-tag" id="modeTag">ALPHA</div><div class="help"><span class="key">W</span> accelerate &nbsp;<span class="key">S</span> brake/reverse<br><span class="key">A D</span> steer &nbsp;<span class="key">SPACE</span> boost<br><span class="key">SHIFT</span> jump, then tap a direction to flip &nbsp;<span class="key">R</span> reset</div></div>
+<div id="goalMsg"><div><div class="goal-text" id="gt"></div><div class="goal-sub" id="gs"></div></div></div>
+<div class="mobile" id="mobile"><button data-k="w">▲</button><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button><button data-k=" ">BOOST</button><button data-k="shift">JUMP</button></div>
+<div id="overlay"><div class="panel"><div class="logo">TURBO<span>BALL 3D</span></div><div class="sub">FULL 3D CAR SOCCER</div><p>Drive the arena, jump, boost and smash the ball into the red goal.</p>
+<div class="mode-select"><button class="mode-btn active" data-mode="alpha">ALPHA</button><button class="mode-btn" data-mode="dev">DEV</button></div>
+<button id="start" class="btn">KICK OFF</button>
+<div class="small">WASD / arrows to drive · SPACE boost · SHIFT jump · R reset<br>Jump, then quickly tap W/A/S/D in mid-air to dodge-flip<br><b>ALPHA</b>: standard boost, pads give +25 · <b>DEV</b>: unlimited boost, pads give +100</div></div></div>
 
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com"
-      }
-    }
-  </script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
 
-  <script type="module">
-    import * as THREE from 'three';
-
-    // --- SCENE & RENDERER ---
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b1120);
-    scene.fog = new THREE.FogExp2(0x0b1120, 0.0045);
-
-    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 500);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    document.body.appendChild(renderer.domElement);
-
-    // --- LIGHTING ---
-    const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x1e293b, 1.1);
-    scene.add(hemiLight);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.6);
-    dirLight.position.set(40, 85, 30);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.set(2048, 2048);
-    dirLight.shadow.camera.near = 10;
-    dirLight.shadow.camera.far = 220;
-    const d = 95;
-    dirLight.shadow.camera.left = -d;
-    dirLight.shadow.camera.right = d;
-    dirLight.shadow.camera.top = d;
-    dirLight.shadow.camera.bottom = -d;
-    scene.add(dirLight);
-
-    // --- ARENA DIMENSIONS ---
-    const ARENA_W = 84;   // X: -42 to +42
-    const ARENA_L = 136;  // Z: -68 to +68
-    const ARENA_H = 34;   // Ceiling height
-    const GOAL_W = 24;
-    const GOAL_H = 10;
-    const GOAL_D = 12;
-
-    // Pitch Floor
-    const floorGeo = new THREE.PlaneGeometry(ARENA_W, ARENA_L);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.75, metalness: 0.05 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    scene.add(floor);
-
-    // Pitch Markings
-    const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45 });
-    const midLine = new THREE.Mesh(new THREE.PlaneGeometry(ARENA_W, 0.6), lineMat);
-    midLine.rotation.x = -Math.PI / 2;
-    midLine.position.y = 0.02;
-    scene.add(midLine);
-
-    const centerCircle = new THREE.Mesh(new THREE.RingGeometry(11.5, 12.1, 48), lineMat);
-    centerCircle.rotation.x = -Math.PI / 2;
-    centerCircle.position.y = 0.02;
-    scene.add(centerCircle);
-
-    // Glass Arena Walls
-    const wallMat = new THREE.MeshPhysicalMaterial({
-      color: 0x38bdf8, transparent: true, opacity: 0.14, roughness: 0.1, side: THREE.DoubleSide
-    });
-    const borderMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.6, roughness: 0.3 });
-
-    function addWall(w, h, x, y, z, ry = 0) {
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
-      mesh.position.set(x, y, z);
-      mesh.rotation.y = ry;
-      scene.add(mesh);
-
-      const trim = new THREE.Mesh(new THREE.BoxGeometry(w, 0.8, 0.8), borderMat);
-      trim.position.set(x, 0.4, z);
-      trim.rotation.y = ry;
-      scene.add(trim);
-    }
-
-    // Side walls
-    addWall(ARENA_L, ARENA_H, -ARENA_W / 2, ARENA_H / 2, 0, Math.PI / 2);
-    addWall(ARENA_L, ARENA_H, ARENA_W / 2, ARENA_H / 2, 0, -Math.PI / 2);
-
-    // End walls around goal openings
-    const sideBackW = (ARENA_W - GOAL_W) / 2;
-    [-ARENA_L / 2, ARENA_L / 2].forEach(zPos => {
-      addWall(sideBackW, ARENA_H, -GOAL_W / 2 - sideBackW / 2, ARENA_H / 2, zPos, 0);
-      addWall(sideBackW, ARENA_H, GOAL_W / 2 + sideBackW / 2, ARENA_H / 2, zPos, 0);
-      addWall(GOAL_W, ARENA_H - GOAL_H, 0, GOAL_H + (ARENA_H - GOAL_H) / 2, zPos, 0);
-    });
-
-    // Goals (Blue at +Z, Orange at -Z)
-    function createGoal(zSign, colorHex) {
-      const group = new THREE.Group();
-      const postMat = new THREE.MeshStandardMaterial({ color: colorHex, emissive: colorHex, emissiveIntensity: 0.35 });
-      const netMat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.18, side: THREE.DoubleSide });
-
-      const baseZ = zSign * (ARENA_L / 2);
-      const backZ = zSign * (ARENA_L / 2 + GOAL_D);
-
-      // Frame posts
-      const leftPost = new THREE.Mesh(new THREE.BoxGeometry(0.8, GOAL_H, 0.8), postMat);
-      leftPost.position.set(-GOAL_W / 2, GOAL_H / 2, baseZ);
-      const rightPost = new THREE.Mesh(new THREE.BoxGeometry(0.8, GOAL_H, 0.8), postMat);
-      rightPost.position.set(GOAL_W / 2, GOAL_H / 2, baseZ);
-      const crossbar = new THREE.Mesh(new THREE.BoxGeometry(GOAL_W + 0.8, 0.8, 0.8), postMat);
-      crossbar.position.set(0, GOAL_H, baseZ);
-      group.add(leftPost, rightPost, crossbar);
-
-      // Goal box netting
-      const backNet = new THREE.Mesh(new THREE.PlaneGeometry(GOAL_W, GOAL_H), netMat);
-      backNet.position.set(0, GOAL_H / 2, backZ);
-      const topNet = new THREE.Mesh(new THREE.PlaneGeometry(GOAL_W, GOAL_D), netMat);
-      topNet.rotation.x = Math.PI / 2;
-      topNet.position.set(0, GOAL_H, (baseZ + backZ) / 2);
-      group.add(backNet, topNet);
-
-      scene.add(group);
-    }
-    createGoal(1, 0x38bdf8);   // Blue Goal (+Z)
-    createGoal(-1, 0xfb923c);  // Orange Goal (-Z)
-
-    // --- BOOST PADS ---
-    const boostPads = [];
-    const padPositions = [
-      [-32, -46], [32, -46], [-32, 0], [32, 0], [-32, 46], [32, 46],
-      [0, -34], [0, 34], [-18, -20], [18, -20], [-18, 20], [18, 20]
-    ];
-    const padGeo = new THREE.CylinderGeometry(1.6, 1.9, 0.25, 24);
-    const orbGeo = new THREE.SphereGeometry(0.75, 16, 16);
-
-    padPositions.forEach(([x, z], idx) => {
-      const isBig = idx < 6;
-      const base = new THREE.Mesh(padGeo, new THREE.MeshStandardMaterial({ color: 0x334155 }));
-      base.position.set(x, 0.12, z);
-      scene.add(base);
-
-      const orb = new THREE.Mesh(
-        isBig ? new THREE.SphereGeometry(1.05, 16, 16) : orbGeo,
-        new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 0.9 })
-      );
-      orb.position.set(x, isBig ? 1.3 : 0.9, z);
-      scene.add(orb);
-
-      boostPads.push({ x, z, isBig, orb, cooldown: 0 });
-    });
-
-    // --- BALL ---
-    const BALL_RADIUS = 3.2;
-    const ballGroup = new THREE.Group();
-    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25, metalness: 0.35 })
-);
-ballMesh.castShadow = true;
-const ballWire = new THREE.Mesh(
-new THREE.IcosahedronGeometry(BALL_RADIUS + 0.04, 2),
-new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.35 })
-);
-ballGroup.add(ballMesh, ballWire);
-scene.add(ballGroup);
-// Ball ground indicator ring
-const groundRing = new THREE.Mesh(
-new THREE.RingGeometry(BALL_RADIUS * 0.85, BALL_RADIUS * 1.05, 32),
-new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
-);
-groundRing.rotation.x = -Math.PI / 2;
-groundRing.position.y = 0.05;
-scene.add(groundRing);
-const ball = {
-pos: new THREE.Vector3(0, BALL_RADIUS, 0),
-vel: new THREE.Vector3(0, 0, 0),
-angVel: new THREE.Vector3(0, 0, 0)
-};
-// --- PLAYER CAR (Clear Front & Rear Orientation) ---
-// Local -Z is FORWARD, +Z is REAR
-const carGroup = new THREE.Group();
-// Main Chassis
-const chassis = new THREE.Mesh(
-new THREE.BoxGeometry(2.6, 0.95, 4.6),
-new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.4 })
-);
-chassis.position.y = 0.85;
-chassis.castShadow = true;
-carGroup.add(chassis);
-// Sloped Hood (Front is -Z)
-const hood = new THREE.Mesh(
-new THREE.BoxGeometry(2.3, 0.45, 1.8),
-new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.25, metalness: 0.5 })
-);
-hood.position.set(0, 1.25, -1.1);
-hood.rotation.x = 0.14;
-carGroup.add(hood);
-// Cabin / Windshield
-const cabin = new THREE.Mesh(
-new THREE.BoxGeometry(2.05, 0.72, 2.0),
-new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.15, metalness: 0.8 })
-);
-cabin.position.set(0, 1.55, 0.25);
-carGroup.add(cabin);
-// Headlights (Front -Z)
-const headlightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-[-0.85, 0.85].forEach(x => {
-const hl = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.22, 0.15), headlightMat);
-hl.position.set(x, 0.95, -2.32);
-carGroup.add(hl);
-});
-// Rear Spoiler (+Z)
-const spoilerWing = new THREE.Mesh(
-new THREE.BoxGeometry(2.7, 0.16, 0.65),
-new THREE.MeshStandardMaterial({ color: 0x0f172a })
-);
-spoilerWing.position.set(0, 1.85, 2.05);
-carGroup.add(spoilerWing);
-[-0.95, 0.95].forEach(x => {
-const strut = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.55, 0.35), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
-strut.position.set(x, 1.55, 2.05);
-carGroup.add(strut);
-});
-// Glowing Boost Exhaust & Flame (+Z)
-const exhaust = new THREE.Mesh(
-new THREE.CylinderGeometry(0.32, 0.38, 0.4, 16),
-new THREE.MeshStandardMaterial({ color: 0x334155 })
-);
-exhaust.rotation.x = Math.PI / 2;
-exhaust.position.set(0, 0.85, 2.35);
-carGroup.add(exhaust);
-const flame = new THREE.Mesh(
-new THREE.ConeGeometry(0.38, 2.2, 16),
-new THREE.MeshBasicMaterial({ color: 0xf97316 })
-);
-flame.rotation.x = Math.PI / 2;
-flame.position.set(0, 0.85, 3.5);
-flame.visible = false;
-carGroup.add(flame);
-// Wheels
-const wheelGeo = new THREE.CylinderGeometry(0.58, 0.58, 0.45, 20);
-const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.8 });
-[[-1.4, -1.45], [1.4, -1.45], [-1.4, 1.45], [1.4, 1.45]].forEach(([wx, wz]) => {
-const w = new THREE.Mesh(wheelGeo, wheelMat);
-w.rotation.z = Math.PI / 2;
-w.position.set(wx, 0.58, wz);
-carGroup.add(w);
-});
-scene.add(carGroup);
-// --- CAR PHYSICS STATE ---
-const car = {
-pos: new THREE.Vector3(0, 0, 38),
-vel: new THREE.Vector3(0, 0, 0),
-quat: new THREE.Quaternion(),
-angVel: new THREE.Vector3(0, 0, 0),
-grounded: true,
-canDoubleJump: false,
-jumpTimer: 0,
-flipTimer: 0,
-flipTorque: new THREE.Vector3(),
-boost: 100
-};
-let blueScore = 0;
-let orangeScore = 0;
-let ballCam = true;
-let goalFreeze = 0;
-function resetKickoff() {
-// Spawn player on Blue side (+Z) facing directly forward (-Z) toward center ball & Orange goal
-car.pos.set(0, 0, 38);
-car.vel.set(0, 0, 0);
-car.quat.identity(); // -Z is forward
-car.angVel.set(0, 0, 0);
-car.grounded = true;
-car.canDoubleJump = false;
-car.flipTimer = 0;
-car.boost = 100;
-ball.pos.set(0, BALL_RADIUS, 0);
-ball.vel.set(0, 0, 0);
-ball.angVel.set(0, 0, 0);
-// Snap camera immediately behind car's rear bumper looking toward ball & opponent goal
-camera.position.set(0, 6.2, 51);
-camera.lookAt(0, 2.5, 0);
+// ─── AUDIO ───
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(freq, dur, type='sine', vol=0.15) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type; osc.frequency.value = freq;
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
 }
-resetKickoff();
-// --- INPUT HANDLING ---
+const sfx = {
+  kick: (force) => playSound(80 + force * 5, 0.12 + force * 0.05, 'square', 0.15 + force * 0.1),
+  boost: () => playSound(200, 0.06, 'sawtooth', 0.06),
+  goal: () => { playSound(440, 0.3, 'sine', 0.25); setTimeout(()=>playSound(660, 0.3, 'sine', 0.25), 150); setTimeout(()=>playSound(880, 0.5, 'sine', 0.3), 300); },
+  bounce: () => playSound(80, 0.1, 'triangle', 0.1)
+};
+
+// ─── SCENE ───
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x071321);
+scene.fog = new THREE.Fog(0x071321, 42, 100);
+const camera = new THREE.PerspectiveCamera(62, innerWidth/innerHeight, .1, 180);
+camera.position.set(0, 12, 22);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0x9bdfff, 0x142034, 2));
+const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+sun.position.set(-12, 25, 12); sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -38; sun.shadow.camera.right = 38;
+sun.shadow.camera.top = 28; sun.shadow.camera.bottom = -28;
+scene.add(sun);
+
+const mat = (color, metal=0, rough=.5, em=0) => new THREE.MeshStandardMaterial({ color, metalness: metal, roughness: rough, emissive: color, emissiveIntensity: em });
+function box(w, h, d, m, x, y, z) {
+  let o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+  o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true;
+  scene.add(o); return o;
+}
+
+// ─── ARENA ───
+box(62, .5, 38, mat(0x123b42, .1, .8), 0, -.55, 0);
+for (let i = 0; i < 12; i++) {
+  let s = box(5, .015, 37, mat(i % 2 ? 0x174b4c : 0x194344), -27.5 + i * 5, 0, 0);
+  s.receiveShadow = true;
+}
+const lineMat = mat(0x9aefff, .1, .35, .45);
+box(.13, .025, 34, lineMat, 0, -.27, 0);
+box(58, .025, .13, lineMat, 0, -.27, -17);
+box(58, .025, .13, lineMat, 0, -.27, 17);
+let circle = new THREE.Mesh(new THREE.TorusGeometry(4, .055, 8, 80), lineMat);
+circle.rotation.x = Math.PI / 2; circle.position.y = -.26; scene.add(circle);
+for (let x of [-29, 29]) {
+  box(.5, 3, 38, mat(0x15334a, .25, .45), x, 1, 0);
+  box(.6, 5, 9, mat(x < 0 ? 0xff557c : 0x3edcff, .25, .3, .7), x, 2.3, 0);
+}
+for (let x of [-31, 31]) {
+  for (let z of [-5, 5]) box(.45, 4, .35, mat(x < 0 ? 0xff547b : 0x42dcff, .2, .3, .35), x, 2, z);
+  box(.45, .35, 10, mat(x < 0 ? 0xff547b : 0x42dcff, .2, .3, .35), x, 4, 0);
+}
+for (let z of [-18.5, 18.5]) {
+  box(62, 1, 1, mat(0x193c54, .35, .35), 0, .15, z);
+  for (let x = -25; x <= 25; x += 10) box(.12, 2, .12, lineMat, x, 1, z);
+}
+const pads = [];
+for (let x of [-22, -11, 0, 11, 22])
+  for (let z of [-12, 12]) {
+    let p = new THREE.Mesh(new THREE.CylinderGeometry(.65, .65, .12, 24), mat(0xf7d76b, .35, .3, .5));
+    p.position.set(x, .05, z); scene.add(p); pads.push(p);
+  }
+
+// ─── BOOST TRAIL (NEW) ───
+const trailGeo = new THREE.BufferGeometry();
+const trailPositions = new Float32Array(60 * 3);
+const trailColors = new Float32Array(60 * 3);
+trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+trailGeo.setAttribute('color', new THREE.BufferAttribute(trailColors, 3));
+const trailMat = new THREE.PointsMaterial({ size: .3, vertexColors: true, transparent: true, opacity: .7 });
+const trail = new THREE.Points(trailGeo, trailMat);
+scene.add(trail);
+let trailIdx = 0;
+
+// ─── CARS ───
+function makeCar(color, dark) {
+  const root = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.45, .72, 2.5), mat(color, .35, .28, .18));
+  body.position.y = .75; body.castShadow = true; root.add(body);
+  const hood = new THREE.Mesh(new THREE.BoxGeometry(1.35, .25, .75), mat(dark, .2, .35));
+  hood.position.set(0, 1.03, .72); root.add(hood);
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.12, .62, 1.05), mat(0x152b40, .55, .18));
+  cabin.position.set(0, 1.25, -.25); cabin.castShadow = true; root.add(cabin);
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(1.0, .38, .9), new THREE.MeshStandardMaterial({ color: 0x6ddcff, metalness: .55, roughness: .15, transparent: true, opacity: .55 }));
+  glass.position.set(0, 1.32, -.23); root.add(glass);
+  for (let x of [-.79, .79]) for (let z of [-.78, .78]) {
+    let w = new THREE.Mesh(new THREE.CylinderGeometry(.34, .34, .22, 16), mat(0x111722, .1, .8));
+    w.rotation.z = Math.PI / 2; w.position.set(x, .43, z); root.add(w);
+  }
+  // Boost glow (NEW)
+  const glow = new THREE.Mesh(new THREE.BoxGeometry(1.6, .8, 2.7), new THREE.MeshBasicMaterial({ color: 0x24baff, transparent: true, opacity: 0 }));
+  glow.position.y = .75; root.add(glow);
+  scene.add(root);
+  return { root, glow, vx: 0, vz: 0, vy: 0, yaw: 0, boost: 100, onGround: true, jumpAge: 99, flipCooldown: 0, flipTime: 0, flipX: 0, flipZ: 0, boosting: false };
+}
+const player = makeCar(0x159bc9, 0x0b567e);
+const bot = makeCar(0xd92f59, 0x811d3c);
+player.root.position.set(-19, 0, 0); player.yaw = Math.PI / 2;
+bot.root.position.set(19, 0, 0); bot.yaw = -Math.PI / 2;
+
+// ─── BALL (Rocket League physics) ───
+const BALL_MASS = 2.0; // Heavier than before
+const ball = new THREE.Mesh(new THREE.SphereGeometry(1.35, 32, 24), mat(0xe8f2f8, .12, .24));
+ball.position.set(0, 1.45, 0); ball.castShadow = true; ball.receiveShadow = true;
+scene.add(ball);
+const seam = new THREE.Mesh(new THREE.TorusGeometry(1.355, .025, 8, 48), mat(0x536c7c, .25, .4));
+ball.add(seam); seam.rotation.x = Math.PI / 2;
+ball.userData = { vx: 0, vy: 0, vz: 0, spin: 0 };
+
+// ─── STATE ───
 const keys = {};
-window.addEventListener('keydown', (e) => {
-const code = e.code;
-if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(code)) {
-e.preventDefault();
-}
-if (!keys[code]) {
-if (code === 'Space') handleJump();
-if (code === 'KeyF' || code === 'Tab') {
-ballCam = !ballCam;
-document.getElementById('camStatus').textContent = BALL CAM: ${ballCam ? 'ON' : 'OFF'} (F);
-}
-if (code === 'KeyR') resetKickoff();
-}
-keys[code] = true;
+let blue = 0, red = 0, time = 180, active = false, last = 0, boost = 100;
+let camShake = 0, boostMode = 'alpha'; // 'alpha' or 'dev'
+
+// ─── MODE SELECT ───
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    boostMode = b.dataset.mode;
+    document.getElementById('modeTag').textContent = boostMode.toUpperCase();
+  };
 });
-window.addEventListener('keyup', (e) => { keys[e.code] = false; });
-function handleJump() {
-if (goalFreeze > 0) return;
-const up = new THREE.Vector3(0, 1, 0).applyQuaternion(car.quat);
-if (car.grounded) {
-car.vel.addScaledVector(up, 18.5);
-car.grounded = false;
-car.canDoubleJump = true;
-car.jumpTimer = 1.5;
-} else if (car.canDoubleJump && car.jumpTimer > 0) {
-car.canDoubleJump = false;
-const forwardInput = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
-const sideInput = (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0) - (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0);
-const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(car.quat);
-const right = new THREE.Vector3(1, 0, 0).applyQuaternion(car.quat);
-fwd.y = 0; fwd.normalize();
-right.y = 0; right.normalize();
-if (forwardInput !== 0 || sideInput !== 0) {
-// Directional Dodge Flip
-const dodgeDir = new THREE.Vector3()
-.addScaledVector(fwd, forwardInput)
-.addScaledVector(right, sideInput)
-.normalize();
-car.vel.addScaledVector(dodgeDir, 24);
-car.vel.y = Math.max(car.vel.y * 0.4, 3.5);
-car.flipTimer = 0.42;
-car.flipTorque.set(-forwardInput * 14, 0, -sideInput * 14);
-} else {
-// Double Jump Pop
-car.vel.y += 17;
+
+// ─── GOAL MESSAGE ───
+let goalTimer = null;
+function showGoalMsg(text, sub, color) {
+  const el = document.getElementById('goalMsg');
+  const gt = document.getElementById('gt');
+  const gs = document.getElementById('gs');
+  gt.textContent = text;
+  gt.style.color = color;
+  gs.textContent = sub;
+  el.style.opacity = '1';
+  clearTimeout(goalTimer);
+  goalTimer = setTimeout(() => el.style.opacity = '0', 2200);
 }
+
+// ─── INPUT ───
+function tryFlip(k) {
+  if (!active || player.onGround || player.jumpAge > .72 || player.flipCooldown > 0) return;
+  let fx = Math.sin(player.yaw), fz = Math.cos(player.yaw);
+  let sideX = Math.cos(player.yaw), sideZ = -Math.sin(player.yaw);
+  let ix = 0, iz = 0;
+  if (k === 'w' || k === 'arrowup') { ix = fx; iz = fz; player.flipX = -1; }
+  else if (k === 's' || k === 'arrowdown') { ix = -fx; iz = -fz; player.flipX = 1; }
+  else if (k === 'a' || k === 'arrowleft') { ix = -sideX; iz = -sideZ; player.flipZ = 1; }
+  else if (k === 'd' || k === 'arrowright') { ix = sideX; iz = sideZ; player.flipZ = -1; }
+  else return;
+  player.vx += ix * 11; player.vz += iz * 11;
+  player.vy = Math.max(player.vy, 5.5);
+  player.flipTime = .48; player.flipCooldown = 1.05;
 }
-}
-// --- MAIN SIMULATION LOOP ---
-const clock = new THREE.Clock();
-const camPosTarget = new THREE.Vector3();
-const camLookTarget = new THREE.Vector3();
-function showBanner(text, color) {
-const b = document.getElementById('banner');
-b.textContent = text;
-b.style.color = color;
-b.classList.add('show');
-setTimeout(() => b.classList.remove('show'), 2000);
-}
-function updatePhysics(dt) {
-if (goalFreeze > 0) {
-goalFreeze -= dt;
-if (goalFreeze <= 0) resetKickoff();
-return;
-}
-const throttle = (keys['KeyW'] || keys['ArrowUp'] ? 1 : 0) - (keys['KeyS'] || keys['ArrowDown'] ? 1 : 0);
-const steer = (keys['KeyA'] || keys['ArrowLeft'] ? 1 : 0) - (keys['KeyD'] || keys['ArrowRight'] ? 1 : 0);
-const isBoosting = (keys['ShiftLeft'] || keys['ShiftRight']) && car.boost > 0.5;
-const isDrifting = keys['KeyE'] || keys['KeyC'];
-const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(car.quat);
-const right = new THREE.Vector3(1, 0, 0).applyQuaternion(car.quat);
-const up = new THREE.Vector3(0, 1, 0).applyQuaternion(car.quat);
-if (car.grounded) {
-// Ground acceleration & braking
-const accel = throttle > 0 ? 54 : 42;
-car.vel.addScaledVector(fwd, throttle * accel * dt);
-// Lateral tire grip vs powerslide drift
-const lateralSpeed = car.vel.dot(right);
-const grip = isDrifting ? 2.2 : 11.5;
-car.vel.addScaledVector(right, -lateralSpeed * Math.min(1, grip * dt));
-// Steering
-const forwardSpeed = car.vel.dot(fwd);
-const speedFactor = Math.min(1, Math.abs(forwardSpeed) / 8);
-const reverseSign = forwardSpeed >= -0.5 ? 1 : -1;
-const turnRate = isDrifting ? 3.5 : 2.55;
-const yawDelta = new THREE.Quaternion().setFromAxisAngle(
-new THREE.Vector3(0, 1, 0),
-steer * turnRate * speedFactor * reverseSign * dt
-);
-car.quat.premultiply(yawDelta);
-// Rolling resistance
-car.vel.multiplyScalar(Math.pow(0.45, dt));
-} else {
-// Mid-air gravity & orientation control
-car.vel.y -= 36 * dt;
-car.jumpTimer = Math.max(0, car.jumpTimer - dt);
-if (car.flipTimer > 0) {
-car.flipTimer -= dt;
-const flipStep = new THREE.Quaternion().setFromEuler(
-new THREE.Euler(car.flipTorque.x * dt, 0, car.flipTorque.z * dt, 'YXZ')
-);
-car.quat.multiply(flipStep);
-} else {
-const pitchRate = -throttle * 3.2 * dt;
-const yawRate = steer * 3.0 * dt;
-const airRot = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitchRate, yawRate, 0, 'YXZ'));
-car.quat.multiply(airRot);
-}
-}
-// Rocket Boost
-if (isBoosting) {
-car.boost = Math.max(0, car.boost - 34 * dt);
-car.vel.addScaledVector(fwd, 64 * dt);
-flame.visible = true;
-flame.scale.setScalar(0.85 + Math.random() * 0.35);
-} else {
-flame.visible = false;
-}
-// Cap max car speed
-const maxSpeed = isBoosting ? 58 : 42;
-if (car.vel.length() > maxSpeed) {
-car.vel.setLength(maxSpeed);
-}
-car.pos.addScaledVector(car.vel, dt);
-// Ground landing & auto-leveling
-if (car.pos.y <= 0) {
-car.pos.y = 0;
-if (car.vel.y < 0) car.vel.y = 0;
-car.grounded = true;
-car.flipTimer = 0;
-const euler = new THREE.Euler().setFromQuaternion(car.quat, 'YXZ');
-euler.x = 0;
-euler.z = 0;
-car.quat.setFromEuler(euler);
-}
-// Car Arena Bounds
-const halfW = ARENA_W / 2 - 2.2;
-const halfL = ARENA_L / 2 - 2.4;
-if (car.pos.x < -halfW) { car.pos.x = -halfW; car.vel.x *= -0.4; }
-if (car.pos.x > halfW) { car.pos.x = halfW; car.vel.x *= -0.4; }
-if (car.pos.z < -halfL) { car.pos.z = -halfL; car.vel.z *= -0.4; }
-if (car.pos.z > halfL) { car.pos.z = halfL; car.vel.z *= -0.4; }
-if (car.pos.y > ARENA_H - 2) { car.pos.y = ARENA_H - 2; car.vel.y = Math.min(0, car.vel.y); }
-// Boost Pad Pickups
-boostPads.forEach(pad => {
-if (pad.cooldown > 0) {
-pad.cooldown -= dt;
-if (pad.cooldown <= 0) pad.orb.visible = true;
-} else {
-pad.orb.rotation.y += 2.5 * dt;
-const dx = car.pos.x - pad.x;
-const dz = car.pos.z - pad.z;
-if (dx * dx + dz * dz < 9.5 && car.pos.y < 3.5 && car.boost < 100) {
-car.boost = Math.min(100, car.boost + (pad.isBig ? 100 : 20));
-pad.orb.visible = false;
-pad.cooldown = pad.isBig ? 10 : 4;
-}
-}
+addEventListener('keydown', e => {
+  let k = e.key.toLowerCase();
+  if (!keys[k]) tryFlip(k);
+  keys[k] = true;
+  if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
+  if (k === 'r') resetPlayer();
 });
-// --- BALL PHYSICS ---
-ball.vel.y -= 28 * dt;
-ball.vel.multiplyScalar(Math.pow(0.94, dt)); // Air drag
-ball.pos.addScaledVector(ball.vel, dt);
-// Floor & Ceiling bounce
-if (ball.pos.y < BALL_RADIUS) {
-ball.pos.y = BALL_RADIUS;
-if (ball.vel.y < -1.5) ball.vel.y *= -0.72;
-else ball.vel.y = 0;
-ball.vel.x *= Math.pow(0.82, dt);
-ball.vel.z *= Math.pow(0.82, dt);
-}
-if (ball.pos.y > ARENA_H - BALL_RADIUS) {
-ball.pos.y = ARENA_H - BALL_RADIUS;
-ball.vel.y *= -0.75;
-}
-// Side Wall bounce
-if (ball.pos.x < -ARENA_W / 2 + BALL_RADIUS) {
-ball.pos.x = -ARENA_W / 2 + BALL_RADIUS;
-ball.vel.x *= -0.78;
-}
-if (ball.pos.x > ARENA_W / 2 - BALL_RADIUS) {
-ball.pos.x = ARENA_W / 2 - BALL_RADIUS;
-ball.vel.x *= -0.78;
-}
-// End Walls & Goal Detection
-const inGoalX = Math.abs(ball.pos.x) < (GOAL_W / 2 - BALL_RADIUS * 0.4);
-const inGoalY = ball.pos.y < (GOAL_H - BALL_RADIUS * 0.4);
-if (ball.pos.z < -ARENA_L / 2 + BALL_RADIUS) {
-if (inGoalX && inGoalY) {
-if (ball.pos.z < -ARENA_L / 2 - BALL_RADIUS * 0.6) {
-blueScore++;
-document.getElementById('blueScore').textContent = blueScore;
-showBanner('BLUE SCORES!', '#38bdf8');
-goalFreeze = 2.2;
-}
-} else {
-ball.pos.z = -ARENA_L / 2 + BALL_RADIUS;
-ball.vel.z *= -0.78;
-}
-}
-if (ball.pos.z > ARENA_L / 2 - BALL_RADIUS) {
-if (inGoalX && inGoalY) {
-if (ball.pos.z > ARENA_L / 2 + BALL_RADIUS * 0.6) {
-orangeScore++;
-document.getElementById('orangeScore').textContent = orangeScore;
-showBanner('ORANGE SCORES!', '#fb923c');
-goalFreeze = 2.2;
-}
-} else {
-ball.pos.z = ARENA_L / 2 - BALL_RADIUS;
-ball.vel.z *= -0.78;
-}
-}
-// --- CAR TO BALL COLLISION ---
-const carCenter = car.pos.clone().add(new THREE.Vector3(0, 1.1, 0));
-const delta = ball.pos.clone().sub(carCenter);
-const dist = delta.length();
-const hitRadius = BALL_RADIUS + 2.3;
-if (dist < hitRadius && dist > 0.001) {
-const normal = delta.divideScalar(dist);
-ball.pos.copy(carCenter).addScaledVector(normal, hitRadius);
-const relVel = car.vel.clone().sub(ball.vel);
-const impactSpeed = Math.max(12, relVel.dot(normal) * 1.65 + car.vel.length() * 0.45);
-ball.vel.copy(normal).multiplyScalar(impactSpeed);
-ball.vel.y += 4.5; // Slight upward loft on crisp hits
-// Subtle recoil on car
-car.vel.addScaledVector(normal, -impactSpeed * 0.15);
-}
-// --- UPDATE VISUAL MESHES ---
-carGroup.position.copy(car.pos);
-carGroup.quaternion.copy(car.quat);
-ballGroup.position.copy(ball.pos);
-ballGroup.rotation.x += ball.vel.z * 0.025 * dt * 60;
-ballGroup.rotation.z -= ball.vel.x * 0.025 * dt * 60;
-groundRing.position.set(ball.pos.x, 0.05, ball.pos.z);
-const ringScale = Math.max(0.35, 1 - ball.pos.y / 38);
-groundRing.scale.setScalar(ringScale);
-document.getElementById('boostVal').textContent = Math.round(car.boost);
-// --- SMOOTH CAMERA (Ball Cam vs Car Cam) ---
-if (ballCam) {
-const toBall = ball.pos.clone().sub(car.pos);
-toBall.y = 0;
-if (toBall.lengthSq() < 0.01) toBall.set(0, 0, -1);
-toBall.normalize();
-camPosTarget.copy(car.pos)
-.addScaledVector(toBall, -13.5)
-.add(new THREE.Vector3(0, 5.2 + Math.min(3.5, ball.pos.y * 0.12), 0));
-// Clamp camera inside arena bounds
-camPosTarget.x = THREE.MathUtils.clamp(camPosTarget.x, -ARENA_W / 2 + 2.5, ARENA_W / 2 - 2.5);
-camPosTarget.z = THREE.MathUtils.clamp(camPosTarget.z, -ARENA_L / 2 + 2.5, ARENA_L / 2 - 2.5);
-camLookTarget.copy(ball.pos).lerp(car.pos, 0.25);
-camLookTarget.y = Math.max(1.8, camLookTarget.y);
-} else {
-const flatFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(car.quat);
-flatFwd.y = 0;
-if (flatFwd.lengthSq() < 0.01) flatFwd.set(0, 0, -1);
-flatFwd.normalize();
-camPosTarget.copy(car.pos)
-.addScaledVector(flatFwd, -12.5)
-.add(new THREE.Vector3(0, 4.8, 0));
-camLookTarget.copy(car.pos)
-.addScaledVector(flatFwd, 12)
-.add(new THREE.Vector3(0, 2.0, 0));
-}
-camera.position.lerp(camPosTarget, 1 - Math.pow(0.0008, dt));
-camera.lookAt(camLookTarget);
-}
-function animate() {
-requestAnimationFrame(animate);
-const dt = Math.min(clock.getDelta(), 0.05);
-updatePhysics(dt);
-renderer.render(scene, camera);
-}
-window.addEventListener('resize', () => {
-camera.aspect = window.innerWidth / window.innerHeight;
-camera.updateProjectionMatrix();
-renderer.setSize(window.innerWidth, window.innerHeight);
+addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+document.querySelectorAll('#mobile button').forEach(b => {
+  let k = b.dataset.k;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); keys[k] = true; });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => b.addEventListener(ev, () => keys[k] = false));
 });
-animate();
-    const ballMesh = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(BALL_RADIUS, 3),
+
+// ─── RESET ───
+function resetCar(c, x) {
+  c.root.position.set(x, 0, 0);
+  c.vx = c.vz = c.vy = 0;
+  c.yaw = x < 0 ? Math.PI / 2 : -Math.PI / 2;
+  c.root.rotation.set(0, c.yaw, 0);
+  c.onGround = true; c.jumpAge = 99;
+  c.flipTime = 0; c.flipX = 0; c.flipZ = 0; c.flipCooldown = 0;
+  c.glow.material.opacity = 0;
+}
+function resetPlayer() { resetCar(player, -19); }
+function kickoff() {
+  ball.position.set(0, 1.45, 0);
+  ball.userData.vx = (Math.random() - .5) * 2;
+  ball.userData.vy = 0;
+  ball.userData.vz = (Math.random() - .5) * 2;
+  resetCar(player, -19); resetCar(bot, 19);
+  boost = 100; player.boost = 100; bot.boost = 100;
+}
+
+// ─── DRIVE (Rocket League physics) ───
+function drive(c, dt, ai = false) {
+  let throttle = 0, steer = 0, boosting = false, jumping = false;
+
+  if (ai) {
+    let dx = ball.position.x - c.root.position.x;
+    let dz = ball.position.z - c.root.position.z;
+    let dist = Math.hypot(dx, dz);
+    let targetX, targetZ;
+    let ballVelX = ball.userData.vx;
+    if (ballVelX > 5 && dist > 8 && c.root.position.x < ball.position.x) {
+      targetX = 26; targetZ = ball.position.z * 0.5;
+    } else {
+      targetX = ball.position.x; targetZ = ball.position.z;
+    }
+    let tdx = targetX - c.root.position.x;
+    let tdz = targetZ - c.root.position.z;
+    let target = Math.atan2(tdx, tdz);
+    let diff = Math.atan2(Math.sin(target - c.yaw), Math.cos(target - c.yaw));
+    steer = Math.max(-1, Math.min(1, diff * 2.5));
+    throttle = Math.abs(diff) > 2.5 ? -.3 : 1;
+    boosting = dist > 12 && Math.abs(diff) < .4 && c.boost > 1;
+    jumping = Math.abs(diff) < .25 && dist < 5 && c.onGround;
+  } else {
+    throttle = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0);
+    steer = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
+    boosting = !!keys[' '] && c.boost > 0 && throttle >= 0;
+    jumping = !!keys.shift;
+  }
+
+  c.boosting = boosting;
+  let speed = Math.hypot(c.vx, c.vz);
+  let turn = .35 + Math.min(speed / 13, 1);
+  c.yaw -= steer * 2.5 * turn * dt * (speed < .5 ? .7 : 1);
+  let forwardX = Math.sin(c.yaw), forwardZ = Math.cos(c.yaw);
+
+  // Rocket League: acceleration is force-based, not instant
+  if (throttle) {
+    let a = boosting ? 34 : 20;
+    c.vx += forwardX * a * throttle * dt;
+    c.vz += forwardZ * a * throttle * dt;
+  }
+  if (boosting) {
+    c.vx += forwardX * 28 * dt;
+    c.vz += forwardZ * 28 * dt;
+    if (boostMode === 'dev') {
+      c.boost = 100; // Unlimited
+    } else {
+      c.boost = Math.max(0, c.boost - 30 * dt);
+    }
+    if (!ai && Math.random() < .2) sfx.boost();
+  }
+
+  // Rocket League: more drag at high speed, less at low speed
+  let drag = Math.pow(1 - (0.006 + speed * 0.0004), dt * 60);
+  c.vx *= drag; c.vz *= drag;
+  let max = boosting ? 30 : 19, s = Math.hypot(c.vx, c.vz);
+  if (s > max) { c.vx *= max / s; c.vz *= max / s; }
+
+  if (jumping && c.onGround) { c.vy = 11; c.onGround = false; c.jumpAge = 0; }
+  else if (!c.onGround) c.jumpAge += dt;
+
+  if (c.flipCooldown > 0) c.flipCooldown -= dt;
+  if (c.flipTime > 0) c.flipTime = Math.max(0, c.flipTime - dt);
+
+  // Rocket League: stronger gravity
+  c.vy -= 28 * dt;
+  c.root.position.x += c.vx * dt;
+  c.root.position.z += c.vz * dt;
+  c.root.position.y += c.vy * dt;
+
+  if (c.root.position.y < 0) { c.root.position.y = 0; c.vy = 0; c.onGround = true; }
+
+  // Wall bounce with energy loss
+  let bounced = false;
+  if (c.root.position.x < -29) { c.root.position.x = -29; c.vx = Math.abs(c.vx) * .5; bounced = true; }
+  if (c.root.position.x > 29) { c.root.position.x = 29; c.vx = -Math.abs(c.vx) * .5; bounced = true; }
+  if (c.root.position.z < -17) { c.root.position.z = -17; c.vz = Math.abs(c.vz) * .5; bounced = true; }
+  if (c.root.position.z > 17) { c.root.position.z = 17; c.vz = -Math.abs(c.vz) * .5; bounced = true; }
+  if (bounced && s > 5) sfx.bounce();
+
+  // Boost glow
+  c.glow.material.opacity = boosting ? .35 : (c.glow.material.opacity > 0 ? c.glow.material.opacity - dt * 2 : 0);
+
+  // Flip
+  let flipProgress = c.flipTime > 0 ? 1 - c.flipTime / .48 : 0;
+  let flipAngle = c.flipTime > 0 ? Math.sin(flipProgress * Math.PI * 2) * Math.PI * 2 : 0;
+  c.root.rotation.set(c.flipX * flipAngle, c.yaw, c.flipZ * flipAngle + Math.min(.12, -steer * .08));
+  if (c.flipTime === 0) { c.flipX = 0; c.flipZ = 0; }
+}
+
+// ─── CAR-BALL COLLISION (Rocket League physics) ───
+function collide(c) {
+  let dx = ball.position.x - c.root.position.x;
+  let dz = ball.position.z - c.root.position.z;
+  let dy = ball.position.y - (c.root.position.y + 1);
+  let d = Math.hypot(dx, dy, dz), min = 2.45;
+  if (d < min) {
+    let nx = dx / (d || 1), ny = dy / (d || 1), nz = dz / (d || 1);
+    let over = min - d;
+    ball.position.x += nx * over;
+    ball.position.y += ny * over;
+    ball.position.z += nz * over;
+
+    // Rocket League: impulse based on car speed
+    let carSpeed = Math.hypot(c.vx, c.vz);
+    let rvx = ball.userData.vx - c.vx, rvz = ball.userData.vz - c.vz;
+    let rel = rvx * nx + rvz * nz;
+    if (rel < 0 || d < 1.9) {
+      // Harder hits at higher speed, with a minimum "tap" force
+      let impulse = Math.max(3, carSpeed * 1.2 + 4);
+      ball.userData.vx += nx * impulse;
+      ball.userData.vz += nz * impulse;
+      ball.userData.vy += Math.max(1.5, ny * impulse * .6 + 1.5);
+      // Car loses momentum (heavier, but still affected)
+      c.vx -= nx * impulse * (BALL_MASS / 5);
+      c.vz -= nz * impulse * (BALL_MASS / 5);
+      // Ball spin from off-center hit
+      let crossX = dy * nz - dz * ny;
+      let crossZ = dz * nx - dx * nz;
+      ball.userData.spin += (crossX + crossZ) * 2;
+      sfx.kick(Math.min(carSpeed / 20, 1));
+    }
+  }
+}
+
+// ─── CAR-CAR COLLISION ───
+function carCollide(a, b) {
+  let dx = b.root.position.x - a.root.position.x;
+  let dz = b.root.position.z - a.root.position.z;
+  let d = Math.hypot(dx, dz), min = 2.8;
+  if (d < min && d > 0) {
+    let nx = dx / d, nz = dz / d;
+    let over = (min - d) / 2;
+    a.root.position.x -= nx * over; a.root.position.z -= nz * over;
+    b.root.position.x += nx * over; b.root.position.z += nz * over;
+    let rvx = a.vx - b.vx, rvz = a.vz - b.vz;
+    let rel = rvx * nx + rvz * nz;
+    if (rel > 0) {
+      a.vx -= nx * rel * .55; a.vz -= nz * rel * .55;
+      b.vx += nx * rel * .55; b.vz += nz * rel * .55;
+    }
+  }
+}
+
+// ─── BOOST PADS ───
+function checkPads(c) {
+  for (let p of pads) {
+    let dx = c.root.position.x - p.position.x;
+    let dz = c.root.position.z - p.position.z;
+    if (Math.hypot(dx, dz) < 1.2 && c.onGround) {
+      if (boostMode === 'dev') {
+        c.boost = 100;
+      } else {
+        c.boost = Math.min(100, c.boost + 25);
+      }
+      let fx = Math.sin(c.yaw), fz = Math.cos(c.yaw);
+      c.vx += fx * 6; c.vz += fz * 6;
+      sfx.boost();
+    }
+  }
+}
+
+// ─── BALL PHYSICS (Rocket League) ───
+function updateBall(dt) {
+  ball.position.x += ball.userData.vx * dt;
+  ball.position.y += ball.userData.vy * dt;
+  ball.position.z += ball.userData.vz * dt;
+
+  // Stronger gravity on ball
+  ball.userData.vy -= 18 * dt;
+
+  // Air resistance (Rocket League ball doesn't fly forever)
+  ball.userData.vx *= Math.pow(.988, dt * 60);
+  ball.userData.vz *= Math.pow(.988, dt * 60);
+
+  // Ground bounce with proper energy loss
+  if (ball.position.y < 1.35) {
+    ball.position.y = 1.35;
+    ball.userData.vy = Math.abs(ball.userData.vy) * .65; // Heavier bounce
+    // Friction on ground
+    ball.userData.vx *= .96;
+    ball.userData.vz *= .96;
+    if (Math.abs(ball.userData.vy) < .3) ball.userData.vy = 0;
+  }
+
+  // Wall bounces (proper reflection)
+  if (Math.abs(ball.position.z) > 16.2) {
+    ball.position.z = Math.sign(ball.position.z) * 16.2;
+    ball.userData.vz *= -.7;
+    sfx.bounce();
+  }
+
+  // Goals
+  if (ball.position.x < -30.5 && Math.abs(ball.position.z) < 5) {
+    // Ball went into LEFT goal (x=-31) → RED scores (blue attacks left)
+    red++;
+    sfx.goal();
+    camShake = .4;
+    let isOwnGoal = false;
+    showGoalMsg('GOAL!', 'SCORED BY RED', '#ff5b83');
+    kickoff();
+  } else if (ball.position.x > 30.5 && Math.abs(ball.position.z) < 5) {
+    // Ball went into RIGHT goal (x=31) → BLUE scores (red attacks right)
+    blue++;
+    sfx.goal();
+    camShake = .4;
+    showGoalMsg('GOAL!', 'SCORED BY BLUE', '#43dcff');
+    kickoff();
+  } else if (Math.abs(ball.position.x) > 30) {
+    ball.position.x = Math.sign(ball.position.x) * 30;
+    ball.userData.vx *= -.7;
+    sfx.bounce();
+  }
+
+  // Ball spin (visual)
+  let speed = Math.hypot(ball.userData.vx, ball.userData.vz);
+  if (speed > 0.1) {
+    let axis = new THREE.Vector3(-ball.userData.vz, 0, ball.userData.vx).normalize();
+    ball.rotateOnWorldAxis(axis, speed * dt / 1.35);
+  }
+  ball.userData.spin *= .95;
+}
+
+// ─── TRAIL ───
+function updateTrail() {
+  if (player.boosting) {
+    let p = player.root.position;
+    let fx = Math.sin(player.yaw), fz = Math.cos(player.yaw);
+    trailPositions[trailIdx * 3] = p.x - fx * 1.5;
+    trailPositions[trailIdx * 3 + 1] = p.y + .5;
+    trailPositions[trailIdx * 3 + 2] = p.z - fz * 1.5;
+    trailColors[trailIdx * 3] = .14;
+    trailColors[trailIdx * 3 + 1] = .73;
+    trailColors[trailIdx * 3 + 2] = 1;
+    trailIdx = (trailIdx + 1) % 60;
+  } else {
+    // Fade old trail
+    for (let i = 0; i < 60; i++) {
+      trailColors[i * 3 + 1] *= .9;
+      trailColors[i * 3 + 2] *= .9;
+    }
+  }
+  trailGeo.attributes.position.needsUpdate = true;
+  trailGeo.attributes.color.needsUpdate = true;
+}
+
+// ─── UPDATE ───
+function update(dt) {
+  drive(player, dt);
+  drive(bot, dt, true);
+  carCollide(player, bot);
+  collide(player);
+  collide(bot);
+  checkPads(player);
+  checkPads(bot);
+
+  updateBall(dt);
+  updateTrail();
+
+  // Boost regen (ALPHA only, slow)
+  if (boostMode === 'alpha') {
+    player.boost = Math.min(100, player.boost + 4 * dt);
+    bot.boost = Math.min(100, bot.boost + 4 * dt);
+  } else {
+    player.boost = 100;
+    bot.boost = 100;
+  }
+  boost = player.boost;
+  time = Math.max(0, time - dt);
+
+  // HUD
+  document.getElementById('bs').textContent = blue;
+  document.getElementById('rs').textContent = red;
+  let m = Math.floor(time / 60);
+  let sec = Math.floor(time % 60);
+  document.getElementById('clock').textContent = m + ':' + String(sec).padStart(2, '0');
+  document.getElementById('bn').textContent = Math.round(boost) + '%';
+  document.getElementById('bf').style.width = boost + '%';
+  document.getElementById('boostBox').classList.toggle('low', boost < 20);
+
+  if (time === 0) {
+    active = false;
+    document.querySelector('.panel').innerHTML = `<div class="logo">${blue === red ? 'DRAW!': blue > red ? 'BLUE WINS!' : 'RED WINS!'}</div><div class="sub">FINAL SCORE</div><h1><span class="blue">${blue}</span> — <span class="red">${red}</span></h1><button class="btn" id="again">PLAY AGAIN</button>`;
+    document.getElementById('overlay').style.display = 'grid';
+    document.getElementById('again').onclick = () => {
+      blue = red = 0; time = 180; kickoff();
+      document.getElementById('overlay').style.display = 'none';
+      active = true; last = performance.now();
+      requestAnimationFrame(loop);
+    };
+  }
+}
+
+// ─── CAMERA ───
+const camTarget = new THREE.Vector3(), camPos = new THREE.Vector3();
+function render() {
+  let p = player.root.position;
+  let fx = Math.sin(player.yaw), fz = Math.cos(player.yaw);
+  let speed = Math.hypot(player.vx, player.vz);
+  let fov = 62 + Math.min(speed / 30, 1) * 12;
+  camera.fov += (fov - camera.fov) * .05;
+  camera.updateProjectionMatrix();
+
+  camTarget.set(p.x + fx * 3, 1.8 + p.y, p.z + fz * 3);
+  camPos.set(p.x - fx * 11, 7.5 + p.y * 1.1, p.z - fz * 11);
+
+  if (camShake > 0) {
+    camShake -= .016;
+    camPos.x += (Math.random() - .5) * camShake * 2;
+    camPos.y += (Math.random() - .5) * camShake * 2;
+  }
+
+  camera.position.lerp(camPos, .09);
+  camera.lookAt(camTarget);
+  renderer.render(scene, camera);
+}
+
+// ─── LOOP ───
+function loop(now) {
+  if (!active) return;
+  let dt = Math.min((now - last) / 1000, .035);
+  last = now;
+  update(dt);
+  render();
+  if (active) requestAnimationFrame(loop);
+}
+
+// ─── START ───
+document.getElementById('start').onclick = () => {
+  audioCtx.resume();
+  document.getElementById('overlay').style.display = 'none';
+  kickoff();
+  active = true;
+  last = performance.now();
+  requestAnimationFrame(loop);
+};
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+kickoff();
+render();
+</script>
+</body></html>   
